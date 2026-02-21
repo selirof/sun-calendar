@@ -3,67 +3,59 @@ from ics import Calendar, Event
 from datetime import datetime, timezone, timedelta
 import pytz
 
-def get_sun_events(current_date):
-    # API call for sunrise and sunset times in San Francisco, CA
-    sun_times_url = f"https://api.sunrise-sunset.org/json?lat=40.945&lng=14.296&date={current_date}"
-    sun_times_url += f"&date={current_date}"
-    print(f"sun_times_url: {sun_times_url}")
+def get_sun_events(current_date_str):
+    # Generazione pulita dell'URL
+    sun_times_url = f"https://api.sunrise-sunset.org/json?lat=40.945&lng=14.296&date={current_date_str}"
 
     response = requests.get(sun_times_url)
+    if response.status_code != 200:
+        print(f"Fallimento API. Status code: {response.status_code}")
+        return []
 
-    response_json = None
+    data = response.json()
+    time_format = "%I:%M:%S %p"
+    year, month, day = map(int, current_date_str.split('-'))
 
-    if response.status_code == 200:
-        data = response.json()  # Assuming the response is in JSON format
-        print(f"response json: {data}")
-        response_json = data
-    else:
-        print(f"Failed to retrieve data. Status code: {response.status_code}")
-
-    time_format = "%I:%M:%S %p"  # format that matches the time strings in the response
-    year, month, day = map(int, current_date.split('-'))
-    # Convert the strings to datetime objects
+    # Parsing degli orari e assegnazione rigorosa del fuso orario UTC
     datetime_objects = {
         key: datetime.strptime(value, time_format).replace(tzinfo=pytz.utc)
-        for key, value in response_json['results'].items()
-        if key != 'day_length'  # 'day_length' doesn't match the time format
+        for key, value in data['results'].items()
+        if key != 'day_length'
     }
 
+    # Sostituzione della data mantenendo il fuso orario intatto
     for key, dt_obj in datetime_objects.items():
         datetime_objects[key] = dt_obj.replace(year=year, month=month, day=day)
 
-    calendar_time_format = "%Y-%m-%d %H:%M:%S"
-
     events = []
 
-    # Create an event for today's sunrise
-    e = Event()
-    e.name = "🌅 Sunrise"
-    e.begin = datetime_objects['sunrise'].strftime(calendar_time_format)
-    e.duration = {'seconds': 15*60}
-    events.append(e)
+    # Creazione evento Alba
+    e_sunrise = Event()
+    e_sunrise.name = "🌅 Sunrise"
+    # L'uso di isoformat() preserva l'offset UTC (+00:00) per gli standard ICS
+    e_sunrise.begin = datetime_objects['sunrise'].isoformat()
+    e_sunrise.duration = {'seconds': 15*60}
+    events.append(e_sunrise)
 
-    # Create an event for today's sunset
-    e = Event()
-    e.name = "🌇 Sunset"
-    e.begin = datetime_objects['sunset'].strftime(calendar_time_format)
-    e.duration = {'seconds': 15*60}
-    events.append(e)
+    # Creazione evento Tramonto
+    e_sunset = Event()
+    e_sunset.name = "🌇 Sunset"
+    e_sunset.begin = datetime_objects['sunset'].isoformat()
+    e_sunset.duration = {'seconds': 15*60}
+    events.append(e_sunset)
 
     return events
 
+# Inizializzazione Calendario
 c = Calendar()
+current_dt = datetime.now(timezone.utc)
 
-current_date = datetime.now(timezone.utc).strftime('%Y-%m-%d')
-
-# get dates for today and next 6 days
-dates = [current_date]
-for i in range(1, 7):
-    dates.append((datetime.now(timezone.utc) + timedelta(days=i)).strftime('%Y-%m-%d'))
-
-for date in dates:
-    for event in get_sun_events(date):
+# Calcolo per oggi e i successivi 6 giorni (7 giorni totali)
+for i in range(7):
+    date_str = (current_dt + timedelta(days=i)).strftime('%Y-%m-%d')
+    for event in get_sun_events(date_str):
         c.events.add(event)
 
+# Serializzazione sicura su file
 with open('sun.ics', 'w') as f:
     f.writelines(c.serialize_iter())
