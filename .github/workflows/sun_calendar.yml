@@ -47,5 +47,5 @@ jobs:
         run: |
           git add sun.ics
           git commit -m "Update sun.ics [skip ci]" || echo "No changes to commit"
-          git push origin HEAD:main
+          git pull --rebase origin main  # <--- AGGIUNGI QUESTA RIGA PER SINCRONIZZARE
           git push origin HEAD:main
