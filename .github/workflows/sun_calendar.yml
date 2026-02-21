@@ -47,5 +47,6 @@ jobs:
         run: |
           git add sun.ics
           git commit -m "Update sun.ics [skip ci]" || echo "No changes to commit"
-          git pull --rebase origin main  # <--- AGGIUNGI QUESTA RIGA PER SINCRONIZZARE
+          # Scarica i dati dal server forzando l'uso della nostra versione in caso di conflitti
+          git pull origin main --no-rebase --strategy-option=ours
           git push origin HEAD:main
