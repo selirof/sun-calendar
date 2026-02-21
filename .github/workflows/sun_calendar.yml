@@ -31,7 +31,7 @@ jobs:
       # 3) Point the 'origin' remote at your repo using GITHUB_TOKEN
       - name: Set remote URL with GITHUB_TOKEN
         run: |
-          git remote set-url origin "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/Avery2/sun-calendar.git"
+          git remote set-url origin "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/selirof/sun-calendar.git"
 
       # 4) Set up Python
       - name: Set up Python
