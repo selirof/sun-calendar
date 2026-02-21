@@ -36,8 +36,8 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          # Forziamo tatsu e ics a versioni compatibili tra loro
-          pip install requests pytz tatsu==4.4.0 ics==0.7.2
+          pip install requests pytz
+          pip install ics # Rimuoviamo il blocco delle versioni per ics e tatsu
 
       - name: Generate ICS file
         run: |
