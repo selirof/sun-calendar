@@ -1,8 +1,7 @@
 name: Update Sun Calendar
 
 on:
-  # This uses cron to schedule the action.
-  # '0 0 */3 * *' = at 00:00 UTC every 3 days.
+  # Esegue l'azione ogni 3 giorni alle 00:00 UTC
   schedule:
     - cron: '0 0 */3 * *'
   workflow_dispatch:
@@ -12,50 +11,41 @@ jobs:
     runs-on: ubuntu-latest
 
     permissions:
-      contents: write   # Allows pushing changes to the repo
+      contents: write
 
     steps:
-      # 1) Check out your code
       - name: Check out repository
         uses: actions/checkout@v3
         with:
-          # We disable persisting credentials so we can manually set them
           persist-credentials: false
 
-      # 2) Configure Git to use GitHub Actions bot user info
       - name: Configure git
         run: |
           git config user.name "github-actions"
           git config user.email "github-actions@github.com"
 
-      # 3) Point the 'origin' remote at your repo using GITHUB_TOKEN
       - name: Set remote URL with GITHUB_TOKEN
         run: |
           git remote set-url origin "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/selirof/sun-calendar.git"
 
-      # 4) Set up Python
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: '3.x'
+          python-version: '3.10' # <--- Fissato a 3.10 per evitare rotture
 
-      # 5) Install Python dependencies
       - name: Install dependencies
         run: |
-          pip install requests ics pytz
+          python -m pip install --upgrade pip
+          # Forziamo tatsu e ics a versioni compatibili tra loro
+          pip install requests pytz tatsu==4.4.0 ics==0.7.2
 
-      # 6) Run your script to generate the ICS file
       - name: Generate ICS file
         run: |
           python create_calendar_local.py
 
-      # 7) (Optional) Move sun.ics to docs/ if GH Pages expects it there
-      # - name: Move ICS to docs
-      #   run: mv sun.ics docs/
-
-      # 8) Commit and push changes
       - name: Commit and push changes
         run: |
           git add sun.ics
           git commit -m "Update sun.ics [skip ci]" || echo "No changes to commit"
+          git push origin HEAD:main
           git push origin HEAD:main
